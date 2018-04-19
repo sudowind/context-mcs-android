@@ -1,6 +1,8 @@
 package com.example.wangfeng.csapp
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -8,6 +10,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
 import com.example.wangfeng.csapp.dummy.DummyContent
 import com.franmontiel.persistentcookiejar.ClearableCookieJar
 import com.franmontiel.persistentcookiejar.PersistentCookieJar
@@ -16,6 +20,7 @@ import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersisto
 import kotlinx.android.synthetic.*
 import okhttp3.*
 import org.json.JSONArray
+import org.json.JSONObject
 import java.io.IOException
 
 
@@ -49,6 +54,13 @@ class BlankFragment : Fragment() {
     }
 
     private fun initView () {
+
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+                              savedInstanceState: Bundle?): View? {
+        // Inflate the layout for this fragment
+        val view = inflater.inflate(R.layout.fragment_blank, container, false)
         Thread(Runnable {
             try {
                 val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
@@ -61,6 +73,7 @@ class BlankFragment : Fragment() {
                         println("something wrong")
                     }
 
+                    @SuppressLint("SetTextI18n")
                     override fun onResponse(call: Call?, response: Response?) {
                         val res = response!!.body()!!.string()
 //                            runOnUiThread({
@@ -68,7 +81,11 @@ class BlankFragment : Fragment() {
 //                            })
                         Log.i("info", res)
                         if (response.code() == 200) {
-
+                            val userNameView = view.findViewById<TextView>(R.id.userName)
+                            val userScoreView = view.findViewById<TextView>(R.id.userScore)
+                            val obj = JSONObject(res)
+                            userNameView.text = "用户名：${obj.getString("user_name")}"
+                            userScoreView.text = "用户积分：${obj.getString("score")}"
                         }
                     }
                 })
@@ -76,12 +93,39 @@ class BlankFragment : Fragment() {
                 e.printStackTrace()
             }
         }).start()
-    }
+        val logOutBtn = view.findViewById<Button>(R.id.logoutButton)
+        logOutBtn.setOnClickListener({
+            Thread(Runnable {
+                try {
+                    val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
+                    val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
+                    val request = Request.Builder()
+                            .url("http://192.168.255.14:8000/user/logout")
+                            .build()
+                    client.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call?, e: IOException?) {
+                            println("something wrong")
+                        }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_blank, container, false)
+                        @SuppressLint("SetTextI18n")
+                        override fun onResponse(call: Call?, response: Response?) {
+                            val res = response!!.body()!!.string()
+//                            runOnUiThread({
+//                                Toast.makeText(applicationContext, res, Toast.LENGTH_SHORT).show()
+//                            })
+                            Log.i("info", res)
+                            if (response.code() == 200) {
+                                val intent = Intent(MainAppliaction.context, Login::class.java)
+                                startActivity(intent)
+                            }
+                        }
+                    })
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }).start()
+        })
+        return view
     }
 
     // TODO: Rename method, update argument and hook method into UI event

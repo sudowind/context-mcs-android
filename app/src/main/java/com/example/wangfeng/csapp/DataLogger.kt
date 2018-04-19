@@ -25,12 +25,12 @@ import java.util.*
 
 class DataLogger : Service() {
 
-    private val Tag : String = "DataLogger"
+    private val tag : String = "DataLogger"
     private var locationManager : LocationManager? = null
     private var sensorManager : SensorManager? = null
     private var powerManager : PowerManager? = null
     private var provider : String = ""
-    private var alarmTime = 5 * 1000
+    private var alarmTime = 10 * 60 * 1000
     private val ifilter : IntentFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
     private var batteryStatus : Intent? = null
 
@@ -47,20 +47,20 @@ class DataLogger : Service() {
         val scale = batteryStatus!!.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
         val status = batteryStatus!!.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
         val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
-        Log.i(Tag, (level / scale).toString())
+        Log.i(tag, (level / scale).toString())
         Thread(Runnable {
             locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
             val list : List<String> = locationManager!!.getProviders(true)
             when {
                 list.contains(LocationManager.GPS_PROVIDER) -> provider = LocationManager.GPS_PROVIDER
                 list.contains(LocationManager.NETWORK_PROVIDER) -> provider = LocationManager.NETWORK_PROVIDER
-                else -> Log.i(Tag, "请打开GPS或网络")
+                else -> Log.i(tag, "请打开GPS或网络")
             }
             if (ContextCompat.checkSelfPermission(this@DataLogger, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
                 val location : Location = locationManager!!.getLastKnownLocation(provider)
                 val currentTime = Date()
-                Log.i(Tag, "纬度为${location.latitude}，经度为${location.longitude}，时间 ${currentTime.time}")
+                Log.i(tag, "纬度为${location.latitude}，经度为${location.longitude}，时间 ${currentTime.time}")
 
                 try {
                     val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(applicationContext))
@@ -77,7 +77,7 @@ class DataLogger : Service() {
                             val res = response!!.body()!!.string()
 
                             if (response.code() == 200) {
-                                Log.i(Tag, res)
+                                Log.i(tag, res)
                             }
                         }
                     })

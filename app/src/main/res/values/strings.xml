@@ -16,4 +16,10 @@
     <string name="user_score">积分：200</string>
     <string name="task_photo">拍照</string>
     <string name="choose_photo">选取照片</string>
+    <string name="infoExtra">积分可用户兑换奖励，完成越多的任务，可以获得更多的积分</string>
+    <string name="register_label_account">用户名</string>
+    <string name="register_label_password">密码</string>
+    <string name="register_label_confirm_password">确认密码</string>
+    <string name="register_button">注册</string>
+    <string name="log_out_text">退出登录</string>
 </resources>

@@ -16,51 +16,37 @@ import com.example.wangfeng.csapp.dummy.DummyContent.DummyItem
  */
 class MyItemRecyclerViewAdapter(private val mValues:List<DummyItem>, private val mListener:OnListFragmentInteractionListener?):RecyclerView.Adapter<MyItemRecyclerViewAdapter.ViewHolder>() {
 
-    public override fun onCreateViewHolder(parent:ViewGroup, viewType:Int):ViewHolder {
-        val view = LayoutInflater.from(parent.getContext())
+    override fun onCreateViewHolder(parent:ViewGroup, viewType:Int):ViewHolder {
+        val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.fragment_item, parent, false)
         return ViewHolder(view)
     }
 
-    public override fun onBindViewHolder(holder:ViewHolder, position:Int) {
-        holder.mItem = mValues.get(position)
-        holder.mStatusView.setText(mValues.get(position).status)
-        holder.mContentView.setText(mValues.get(position).title)
-        holder.mDesView.setText(mValues.get(position).details)
-        holder.mDeadlineView.setText(mValues.get(position).deadline)
+    override fun onBindViewHolder(holder:ViewHolder, position:Int) {
+        holder.mItem = mValues[position]
+        holder.mStatusView.text = mValues[position].status
+        holder.mContentView.text = mValues[position].title
+        holder.mDesView.text = mValues[position].details
+        holder.mDeadlineView.text = mValues[position].deadline
 
-        holder.mView.setOnClickListener(object:View.OnClickListener {
-            public override fun onClick(v:View) {
-                if (null != mListener)
-                {
-                    // Notify the active callbacks interface (the activity, if the
-                    // fragment is attached to one) that an item has been selected.
-                    mListener!!.onListFragmentInteraction(holder.mItem!!)
-                }
-            }
-        })
+        holder.mView.setOnClickListener {
+            mListener?.onListFragmentInteraction(holder.mItem!!)
+        }
     }
 
-    public override fun getItemCount():Int {
+    override fun getItemCount():Int {
         return mValues.size
     }
 
-    inner class ViewHolder( val mView:View):RecyclerView.ViewHolder(mView) {
-        val mStatusView:TextView
-        val mContentView:TextView
-        val mDesView:TextView
-        val mDeadlineView:TextView
+    inner class ViewHolder( val mView : View):RecyclerView.ViewHolder(mView) {
+        val mStatusView:TextView = mView.findViewById(R.id.status) as TextView
+        val mContentView:TextView = mView.findViewById(R.id.content) as TextView
+        val mDesView:TextView = mView.findViewById(R.id.description) as TextView
+        val mDeadlineView:TextView = mView.findViewById(R.id.deadline) as TextView
         var mItem:DummyItem? = null
 
-        init{
-            mStatusView = mView.findViewById(R.id.status) as TextView
-            mContentView = mView.findViewById(R.id.content) as TextView
-            mDesView = mView.findViewById(R.id.description) as TextView
-            mDeadlineView = mView.findViewById(R.id.deadline) as TextView
-        }
-
-        public override fun toString():String {
-            return super.toString() + " '" + mContentView.getText() + "'"
+        override fun toString():String {
+            return super.toString() + " '" + mContentView.text + "'"
         }
     }
 }

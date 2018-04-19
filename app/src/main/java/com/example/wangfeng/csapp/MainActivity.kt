@@ -63,6 +63,8 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        checkLoginStatus()
+
         if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
         }
@@ -84,6 +86,35 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
         intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
         intentFilter.addAction(Intent.ACTION_USER_PRESENT)
         applicationContext.registerReceiver(ScreenBroadcastReceiver(), intentFilter)
+    }
+
+    private fun checkLoginStatus() {
+        Thread(Runnable {
+            try {
+                val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(applicationContext))
+                val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
+                val request = Request.Builder()
+                        .url("http://192.168.255.14:8000/user/hello")
+                        .build()
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call?, e: IOException?) {
+                        println("something wrong")
+                    }
+
+                    override fun onResponse(call: Call?, response: Response?) {
+                        val res = response!!.body()!!.string()
+                        if (response.code() == 200) {
+
+                        } else {
+                            val intent = Intent(this@MainActivity, Login::class.java)
+                            startActivity(intent)
+                        }
+                    }
+                })
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }).start()
     }
 
     override fun onFragmentInteraction(uri: Uri) {
@@ -136,6 +167,7 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
                             bundle.putString("title", title)
                             bundle.putString("desc", content)
                             bundle.putString("deadline", deadline)
+                            bundle.putString("id", id)
 
                             /*把bundle对象assign给Intent*/
                             intent?.putExtras(bundle)

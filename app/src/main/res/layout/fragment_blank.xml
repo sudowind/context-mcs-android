@@ -25,6 +25,19 @@
             android:layout_height="40dp"
             android:layout_margin="@dimen/text_margin"
             android:text="@string/user_score" />
+
+        <TextView
+            android:id="@+id/userScore2"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_margin="@dimen/text_margin"
+            android:text="@string/infoExtra" />
+
+        <Button
+            android:id="@+id/logoutButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/log_out_text" />
     </LinearLayout>
 
 </FrameLayout>

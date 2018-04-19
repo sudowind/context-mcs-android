@@ -43,10 +43,9 @@ object DummyContent {
 
     init{
         // Add some sample items.
-        loadTasks()
     }
 
-    public fun loadTasks() {
+    fun loadTasks() {
         Thread(Runnable {
             try {
                 val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
@@ -64,7 +63,7 @@ object DummyContent {
 //                            runOnUiThread({
 //                                Toast.makeText(applicationContext, res, Toast.LENGTH_SHORT).show()
 //                            })
-                        Log.i("task list", res)
+                        Log.i("load content", res)
                         if (response.code() == 200) {
                             val obj = JSONArray(res)
                             ITEMS = ArrayList<DummyItem>()
@@ -97,19 +96,9 @@ object DummyContent {
         }).start()
     }
 
-    private fun addItem(item:DummyItem) {
+    fun addItem(item:DummyItem) {
         ITEMS.add(item)
-        ITEM_MAP.put(item.id, item)
-    }
-
-    private fun makeDetails(position:Int):String {
-        val builder = StringBuilder()
-        builder.append("Details about Item: ").append(position)
-        for (i in 0 until position)
-        {
-            builder.append("\nMore details information here.")
-        }
-        return builder.toString()
+        ITEM_MAP[item.id] = item
     }
 
     /**
@@ -117,7 +106,7 @@ object DummyContent {
      */
     class DummyItem( val id:String,  val title:String,  val details:String, val deadline:String, val taskId:String, val status:String) {
 
-        public override fun toString():String {
+        override fun toString():String {
             return details
         }
     }

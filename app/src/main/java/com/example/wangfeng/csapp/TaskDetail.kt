@@ -22,6 +22,11 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
+import com.franmontiel.persistentcookiejar.ClearableCookieJar
+import com.franmontiel.persistentcookiejar.PersistentCookieJar
+import com.franmontiel.persistentcookiejar.cache.SetCookieCache
+import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor
+import okhttp3.*
 
 import java.io.File
 import java.io.FileNotFoundException
@@ -38,6 +43,8 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
     private var output: File? = null  // 设置拍照的图片文件
     private var photoUri: Uri? = null  // 拍摄照片的路径
 
+    private var taskId: String = ""
+
     @Throws(Exception::class)
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,10 +56,13 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
         if (bundle != null) {
             val title = bundle.getString("title")
             val desc = bundle.getString("desc")
+            val deadline = bundle.getString("deadline")
+            taskId = bundle.getString("id")
             Log.v("task detail", title)
             Log.v("task detail", desc)
             val titleView = findViewById<TextView>(R.id.taskTitle)
             val descView = findViewById<TextView>(R.id.description)
+            val deadlineView = findViewById<TextView>(R.id.deadline)
             titleView.text = title
             descView.text = desc
         }
@@ -83,7 +93,48 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun submitTask() {
-        val radioGroup = findViewById<RadioGroup>(R.id.ratioGroup)
+        if (photoUri != null) {
+            Thread(Runnable {
+                try {
+                    val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
+                    val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
+                    val file = File(photoUri.toString())
+//                val builder = MultipartBody.Builder()
+//                        .setType(MultipartBody.FORM)
+//                        .addFormDataPart("image", "response_image.jpg",
+//                                RequestBody.create(MediaType.parse("image/png"), file)).build()
+                    val formBody = FormBody.Builder()
+                            .add("taskId", taskId)
+                            .add("status", "5")
+                            .build()
+                    val request = Request.Builder()
+                            .url("http://192.168.255.14:8000/user/task/modify_status")
+                            .post(formBody)
+                            .build()
+                    client.newCall(request).enqueue(object : Callback {
+                        override fun onFailure(call: Call?, e: IOException?) {
+                            println("something wrong")
+                        }
+
+                        override fun onResponse(call: Call?, response: Response?) {
+                            val res = response!!.body()!!.string()
+//                            runOnUiThread({
+//                                Toast.makeText(applicationContext, res, Toast.LENGTH_SHORT).show()
+//                            })
+                            if (response.code() == 200) {
+                                finish()
+                            }
+                        }
+                    })
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }).start()
+        } else {
+            Toast.makeText(applicationContext,
+                    "请先拍照或选择照片",
+                    Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onClick(v: View) {
@@ -144,7 +195,7 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
         val intent = Intent("android.media.action.IMAGE_CAPTURE")
         photoUri = FileProvider.getUriForFile(
                 this,
-                packageName + ".fileprovider", output)
+                "$packageName.fileprovider", output)
         intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
         startActivityForResult(intent, REQUEST_TAKE_PHOTO)
     }
@@ -165,6 +216,7 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
             when (requestCode) {
             // 拍摄照片的回调
                 REQUEST_TAKE_PHOTO -> if (resultCode == Activity.RESULT_OK) {
+                    Log.i("img url", photoUri.toString())
                     try {
                         val bit = BitmapFactory.decodeStream(contentResolver.openInputStream(photoUri!!))
                         picture!!.setImageBitmap(bit)
@@ -180,6 +232,8 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
             // 调用系统相册的回调
                 REQUEST_CHOOSE_PHOTO -> if (resultCode == Activity.RESULT_OK) {
                     val uri = data.data
+                    photoUri = uri
+                    Log.i("img url", uri.toString())
                     try {
                         val bit = BitmapFactory.decodeStream(contentResolver.openInputStream(uri!!))
                         picture!!.setImageBitmap(bit)
@@ -196,6 +250,7 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
                     Log.i("detail", "未知错误")
                 }
             }
+            val file = File(photoUri.toString())
         }
     }
 
@@ -222,11 +277,11 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
 
     companion object {
 
-        private val REQUEST_TAKE_PHOTO = 1 // 拍照标识
-        private val REQUEST_CHOOSE_PHOTO = 2 // 选择相册标示符
+        private const val REQUEST_TAKE_PHOTO = 1 // 拍照标识
+        private const val REQUEST_CHOOSE_PHOTO = 2 // 选择相册标示符
 
         // 获取拍照权限标识
-        private val PERMISSION_REQUEST_TAKE_PHONE = 6
-        private val PERMISSION_REQUEST_CHOOSE_PICTURE = 7
+        private const val PERMISSION_REQUEST_TAKE_PHONE = 6
+        private const val PERMISSION_REQUEST_CHOOSE_PICTURE = 7
     }
 }
