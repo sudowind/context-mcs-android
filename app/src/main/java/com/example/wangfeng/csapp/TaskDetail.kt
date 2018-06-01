@@ -93,6 +93,7 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun submitTask() {
+        Log.i("submit task", "hahah")
         if (photoUri != null) {
             Thread(Runnable {
                 try {
@@ -108,7 +109,7 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
                             .add("status", "5")
                             .build()
                     val request = Request.Builder()
-                            .url("http://192.168.255.14:8000/user/task/modify_status")
+                            .url("http://www.sudowind.com:8000/user/task/modify_status")
                             .post(formBody)
                             .build()
                     client.newCall(request).enqueue(object : Callback {

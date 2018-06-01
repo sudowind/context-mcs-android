@@ -11,7 +11,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -21,6 +20,12 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.GET_TASKS"/>
     <uses-permission
         android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
@@ -50,11 +55,18 @@
                 <action android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".Login">
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".Login">
+            <intent-filter>
+                <action android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <activity android:name=".UserInfo" />
@@ -70,18 +82,17 @@
         </provider>
 
         <activity android:name=".TaskUnaccepted" />
-        <activity
-            android:name=".MainActivity"
-            android:label="@string/title_activity_main">
-            <intent-filter>
-                <action android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
 
         <service
             android:name=".DataLogger"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+                <action android:name="com.example.wangfeng.csapp.destroy" />
+            </intent-filter>
+        </service>
 
         <receiver
             android:name=".receiver.AlarmReceiver"
@@ -179,20 +190,19 @@
             android:exported="false" />
 
         <!-- &lt;!&ndash; User defined.  For test only  用户自定义的广播接收器&ndash;&gt; -->
-        <!-- <receiver -->
-        <!-- android:name="com.example.jpushdemo.MyReceiver" -->
-        <!-- android:exported="false" -->
-        <!-- android:enabled="true"> -->
-        <!-- <intent-filter> -->
-        <!-- <action android:name="cn.jpush.android.intent.REGISTRATION" /> &lt;!&ndash;Required  用户注册SDK的intent&ndash;&gt; -->
-        <!-- <action android:name="cn.jpush.android.intent.MESSAGE_RECEIVED" /> &lt;!&ndash;Required  用户接收SDK消息的intent&ndash;&gt; -->
-        <!-- <action android:name="cn.jpush.android.intent.NOTIFICATION_RECEIVED" /> &lt;!&ndash;Required  用户接收SDK通知栏信息的intent&ndash;&gt; -->
-        <!-- <action android:name="cn.jpush.android.intent.NOTIFICATION_OPENED" /> &lt;!&ndash;Required  用户打开自定义通知栏的intent&ndash;&gt; -->
-        <!-- <action android:name="cn.jpush.android.intent.CONNECTION" />&lt;!&ndash; 接收网络变化 连接/断开 since 1.6.3 &ndash;&gt; -->
-        <!-- <category android:name="com.example.wangfeng.csapp" /> -->
-        <!-- </intent-filter> -->
-        <!-- </receiver> -->
-
+         <receiver
+             android:name=".receiver.JPushReceiver"
+             android:exported="false"
+             android:enabled="true">
+             <intent-filter>
+                 <action android:name="cn.jpush.android.intent.REGISTRATION" /> <!--Required  用户注册SDK的intent-->
+                 <action android:name="cn.jpush.android.intent.MESSAGE_RECEIVED" /> <!--Required  用户接收SDK消息的intent-->
+                 <action android:name="cn.jpush.android.intent.NOTIFICATION_RECEIVED" /> <!--Required  用户接收SDK通知栏信息的intent-->
+                 <action android:name="cn.jpush.android.intent.NOTIFICATION_OPENED" /> <!--Required  用户打开自定义通知栏的intent-->
+                 <action android:name="cn.jpush.android.intent.CONNECTION" /><!-- 接收网络变化 连接/断开 since 1.6.3 -->
+                 <category android:name="com.example.wangfeng.csapp" />
+             </intent-filter>
+         </receiver>
 
         <!-- <receiver android:name="com.example.jpushdemo.MyJPushMessageReceiver"> -->
         <!-- <intent-filter> -->
@@ -211,9 +221,19 @@
         <activity android:name=".Registration">
             <intent-filter>
                 <action android:name="com.example.BroadcastReceiver" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".receiver.BluetoothReceiver"
+            android:enabled="true"
+            android:exported="true" />
+        <!--<receiver-->
+            <!--android:name=".receiver.JPushReceiver"-->
+            <!--android:enabled="true"-->
+            <!--android:exported="true"></receiver>-->
     </application>
 
 </manifest>

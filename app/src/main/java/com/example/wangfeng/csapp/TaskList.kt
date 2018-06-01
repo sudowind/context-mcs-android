@@ -55,7 +55,7 @@ class TaskList : AppCompatActivity() {
                     val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(applicationContext))
                     val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                     val request = Request.Builder()
-                            .url("http://192.168.255.14:8000/user/hello")
+                            .url("http://www.sudowind.com:8000/user/hello")
                             .build()
                     client.newCall(request).enqueue(object : Callback {
                         override fun onFailure(call: Call?, e: IOException?) {

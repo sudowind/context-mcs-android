@@ -2,11 +2,18 @@ package com.example.wangfeng.csapp
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AppOpsManager
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.hardware.*
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.support.design.widget.BottomNavigationView
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.Fragment
@@ -19,6 +26,8 @@ import android.view.MenuItem
 import android.widget.FrameLayout
 import android.widget.TextView
 import com.example.wangfeng.csapp.dummy.DummyContent
+import com.example.wangfeng.csapp.dummy.QuestionContent
+import com.example.wangfeng.csapp.receiver.BluetoothReceiver
 import com.example.wangfeng.csapp.receiver.ScreenBroadcastReceiver
 import com.franmontiel.persistentcookiejar.ClearableCookieJar
 import com.franmontiel.persistentcookiejar.PersistentCookieJar
@@ -29,11 +38,65 @@ import kotlinx.android.synthetic.main.fragment_item.*
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
-import java.util.HashMap
+import java.util.*
 
-class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionListener, ItemFragment.OnListFragmentInteractionListener {
+class MainActivity : AppCompatActivity(), SensorEventListener, BlankFragment.OnFragmentInteractionListener, ItemFragment.OnListFragmentInteractionListener, QuestionFragment.OnListFragmentInteractionListener {
 
     private var content: FrameLayout? = null
+    private var sm: SensorManager? = null
+    private var accSensor: Sensor? = null
+    var ax = 0.0
+    var ay = 0.0
+    var az = 0.0
+    var ox = 0.0
+    var oy = 0.0
+    var oz = 0.0
+    var axp = 0.0
+    var ayp = 0.0
+    var g = 10.0
+    var gp = 0.0
+    var simpleRate: SimpleRate? = null
+    var tmp1 = 0.0
+    var tmp2 = 0.0
+    var tmp3 = 0.0
+    var tmp4 = 0.0
+    var lastTime = 0L
+
+    private val MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS = 1101
+
+    fun getAccelerationX(): Double {
+        return axp
+    }
+
+    fun getAccelerationY(): Double {
+        return ayp
+    }
+
+    fun getOrientation(): Double {
+        return Math.asin(tmp4) / Math.PI * 180.0
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        if (requestCode == MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS) {
+            if (!hasPermission()) {
+                //若用户未开启权限，则引导用户开启“Apps with usage access”权限
+                startActivityForResult(
+                        Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
+                        MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS)
+            }
+        }
+    }
+
+    //检测用户是否对本app开启了“Apps with usage access”权限
+    private fun hasPermission() : Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        var mode = 0
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {
+            mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(), packageName)
+        }
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
 
     private val mOnNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
         when (item.itemId) {
@@ -46,6 +109,11 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
             R.id.navigation_dashboard -> {
 //                Log.i("main", "home")
                 val fragment = BlankFragment.Companion.newInstance("test1", "test2")
+                addFragment(fragment)
+                return@OnNavigationItemSelectedListener true
+            }
+            R.id.navigation_questionnaire -> {
+                val fragment = QuestionFragment.Companion.newInstance(1)
                 addFragment(fragment)
                 return@OnNavigationItemSelectedListener true
             }
@@ -68,6 +136,20 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
         if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
         }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 10)
+        }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 10)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (!hasPermission()) {
+                startActivityForResult(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
+                        MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS)
+            }
+        }
+
         Log.i("main", "created")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -86,6 +168,89 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
         intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
         intentFilter.addAction(Intent.ACTION_USER_PRESENT)
         applicationContext.registerReceiver(ScreenBroadcastReceiver(), intentFilter)
+        var bluetoothFilter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+        applicationContext.registerReceiver(BluetoothReceiver(), bluetoothFilter)
+        bluetoothFilter = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+        applicationContext.registerReceiver(BluetoothReceiver(), bluetoothFilter)
+        simpleRate = SimpleRate()
+        sm = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        accSensor = sm!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    }
+
+
+    override fun onSensorChanged(event : SensorEvent) {
+        if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+            val now = Date()
+            if (now.time - lastTime > 60 * 1000) {
+                ax = event.values[0].toDouble()
+                ay = event.values[1].toDouble()
+                az = event.values[2].toDouble()
+                Log.i("main", "$ax $ay $az")
+                lastTime = now.time
+                Thread(Runnable {
+                    try {
+                        val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(applicationContext))
+                        val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
+                        val formBody = FormBody.Builder()
+                                .add("ax", "$ax")
+                                .add("ay", "$ay")
+                                .add("az", "$az")
+                                .build()
+                        val request = Request.Builder()
+                                .url(Utils().baseUrl + "/task/moving_record")
+                                .post(formBody)
+                                .build()
+                        client.newCall(request).enqueue(object : Callback {
+                            override fun onFailure(call: Call?, e: IOException?) {
+                                println("something wrong")
+                            }
+
+                            override fun onResponse(call: Call?, response: Response?) {
+                                val res = response!!.body()!!.string()
+
+                                if (response.code() == 200) {
+                                    Log.i("send acc data", res)
+                                }
+                            }
+                        })
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }).start()
+            }
+        }
+//        synchronized(this) {
+//            if (event.sensor.type == Sensor.TYPE_ORIENTATION) {
+//                oy = event.values[1].toDouble()
+//                oz = event.values[2].toDouble()
+//            }
+//            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+//                ax = event.values[0].toDouble()
+//                ay = event.values[1].toDouble()
+//                az = event.values[2].toDouble()
+//                Log.i("main", "$ax $ay $az")
+//            }
+//            tmp1 = Math.sin(oz * Math.PI / 180.0)
+//            tmp2 = Math.sin(Math.abs(oy) * Math.PI / 180.0)
+//            tmp3 = Math.sqrt(tmp1 * tmp1 + tmp2 * tmp2)
+//            tmp4 = tmp1 / tmp3
+//
+//            gp = 10 * tmp3
+//            axp = ax * Math.cos(tmp4) + ay * Math.sin(tmp4)
+//            ayp = -ax * Math.sin(tmp4) + ay * Math.cos(tmp4) + gp
+//            Log.i("main", "$axp $ayp")
+
+//            Log.i("acc", "$oy $oz $ax $ay")
+//            acx.setText("a X: " + getAccelerationX())
+//            acy.setText("a Y: " + getAccelerationY())
+//            o.setText("Orientation : " + getOrientation())
+            // mDataListX.add(getAccelerationX() + "\n");
+            // mDataListY.add(getAccelerationY() + "\n");
+            // mDataListZ.add(getOrientation() + "\n");
+//        }
+    }
+
+    override fun onAccuracyChanged(p0: Sensor, p1: Int) {
     }
 
     private fun checkLoginStatus() {
@@ -94,7 +259,7 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
                 val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(applicationContext))
                 val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                 val request = Request.Builder()
-                        .url("http://192.168.255.14:8000/user/hello")
+                        .url("http://www.sudowind.com:8000/user/hello")
                         .build()
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call?, e: IOException?) {
@@ -121,6 +286,22 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+
+    override fun onListFragmentInteraction(item: QuestionContent.QuestionItem) {
+        Log.i("main", item.id + item.name)
+        val id : String = item.uqId
+        val name: String = item.name
+        val deadline : String = item.deadline
+        val bundle = Bundle()
+        /*字符、字符串、布尔、字节数组、浮点数等等，都可以传*/
+        bundle.putString("name", name)
+        bundle.putString("deadline", deadline)
+        bundle.putString("id", id)
+        val intent = Intent(this@MainActivity, Questionnaire::class.java)
+        intent.putExtras(bundle)
+        startActivity(intent)
+    }
+
     override fun onListFragmentInteraction(item: DummyContent.DummyItem) {
         Log.i("main", item.id + item.title + item.details)
         val id : String = item.taskId
@@ -136,7 +317,7 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
                 val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(applicationContext))
                 val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                 val request = Request.Builder()
-                        .url("http://192.168.255.14:8000/user/task/$id")
+                        .url("http://www.sudowind.com:8000/user/task/$id")
                         .build()
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call?, e: IOException?) {
@@ -187,6 +368,25 @@ class MainActivity : AppCompatActivity(), BlankFragment.OnFragmentInteractionLis
         fun <T> cast(obj: Any): T {
             return obj as T
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        sm!!.registerListener(this@MainActivity, accSensor, SensorManager.SENSOR_DELAY_NORMAL)
+    }
+
+    override fun onStop() {
+        super.onStop()
+    }
+
+    override fun onPause() {
+        super.onPause()
+//        sm!!.unregisterListener(this@MainActivity)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        sm!!.unregisterListener(this@MainActivity)
     }
 
 }

@@ -67,7 +67,7 @@ class TaskUnaccepted : AppCompatActivity(), View.OnClickListener {
                         .add("taskId", id)
                         .build()
                 val request = Request.Builder()
-                        .url("http://192.168.255.14:8000/user/task/modify_status")
+                        .url("http://www.sudowind.com:8000/user/task/modify_status")
                         .post(formBody)
                         .build()
                 client.newCall(request).enqueue(object : Callback {

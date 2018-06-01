@@ -49,7 +49,7 @@ class ScreenBroadcastReceiver : BroadcastReceiver() {
 //                val requestBody = RequestBody.create(okhttp3.MediaType.parse("application/json"), jsonObj.toString())
                 val request = Request.Builder()
                         .post(formBody)
-                        .url("http://192.168.255.14:8000/task/lock_record")
+                        .url("http://www.sudowind.com:8000/task/lock_record")
                         .build()
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call?, e: IOException?) {

@@ -39,6 +39,35 @@ class Login : AppCompatActivity(), View.OnClickListener {
         val registerBtn = findViewById<Button>(R.id.logOnBtn)
         loginBtn.setOnClickListener(this)
         registerBtn.setOnClickListener(this)
+        checkLoginStatus()
+    }
+
+    private fun checkLoginStatus () {
+        Thread(Runnable {
+            try {
+                val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(applicationContext))
+                val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
+                val request = Request.Builder()
+                        .url("http://www.sudowind.com:8000/user/hello")
+                        .build()
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call?, e: IOException?) {
+                        println("something wrong")
+                    }
+
+                    override fun onResponse(call: Call?, response: Response?) {
+                        val res = response!!.body()!!.string()
+                        if (response.code() == 200) {
+                            val intent = Intent(this@Login, MainActivity::class.java)
+                            startActivity(intent)
+                        } else {
+                        }
+                    }
+                })
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }).start()
     }
 
     override fun onClick(v: View) {
@@ -61,7 +90,7 @@ class Login : AppCompatActivity(), View.OnClickListener {
                                 .add("password", passWord.text.toString())
                                 .build()
                         val request = Request.Builder()
-                                .url("http://192.168.255.14:8000/user/login")
+                                .url("http://www.sudowind.com:8000/user/login")
                                 .post(formBody)
                                 .build()
 

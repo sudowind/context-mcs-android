@@ -1,10 +1,10 @@
 <resources>
-    <string name="app_name">csapp</string>
+    <string name="app_name">群智</string>
     <string name="hello_world">Hello World!</string>
     <string name="submit">提交</string>
     <string name="description">description</string>
     <string name="title">title</string>
-    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_main">我的任务</string>
     <string name="title_list">我的任务</string>
     <string name="title_mine">个人信息</string>
     <string name="title_notifications">Notifications</string>
@@ -16,10 +16,11 @@
     <string name="user_score">积分：200</string>
     <string name="task_photo">拍照</string>
     <string name="choose_photo">选取照片</string>
-    <string name="infoExtra">积分可用户兑换奖励，完成越多的任务，可以获得更多的积分</string>
+    <string name="infoExtra">积分可用户兑换奖励，完成越多的任务，可以获得更多的积分积分可用户兑换奖励，完成越多的任务，可以获得更多的积分积分可用户兑换奖励，完成越多的任务，可以获得更多的积分积分可用户兑换奖励，完成越多的任务，可以获得更多的积分</string>
     <string name="register_label_account">用户名</string>
     <string name="register_label_password">密码</string>
     <string name="register_label_confirm_password">确认密码</string>
     <string name="register_button">注册</string>
     <string name="log_out_text">退出登录</string>
+    <string name="title_question">我的问卷</string>
 </resources>

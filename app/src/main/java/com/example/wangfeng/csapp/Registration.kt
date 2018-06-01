@@ -59,7 +59,7 @@ class Registration : AppCompatActivity(), View.OnClickListener {
                         .add("password", p1)
                         .build()
                 val request = Request.Builder()
-                        .url("http://192.168.255.14:8000/user/create")
+                        .url("http://www.sudowind.com:8000/user/create")
                         .post(formBody)
                         .build()
                 client.newCall(request).enqueue(object : Callback {
@@ -91,7 +91,7 @@ class Registration : AppCompatActivity(), View.OnClickListener {
                         .add("password", p1)
                         .build()
                 val request = Request.Builder()
-                        .url("http://192.168.255.14:8000/user/login")
+                        .url("http://www.sudowind.com:8000/user/login")
                         .post(formBody)
                         .build()
 

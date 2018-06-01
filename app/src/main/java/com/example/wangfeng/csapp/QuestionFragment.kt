@@ -14,8 +14,8 @@ import android.view.View
 import android.view.ViewGroup
 import com.example.wangfeng.csapp.R.id.list
 
-import com.example.wangfeng.csapp.dummy.DummyContent
-import com.example.wangfeng.csapp.dummy.DummyContent.DummyItem
+import com.example.wangfeng.csapp.dummy.QuestionContent
+import com.example.wangfeng.csapp.dummy.QuestionContent.QuestionItem
 import com.franmontiel.persistentcookiejar.ClearableCookieJar
 import com.franmontiel.persistentcookiejar.PersistentCookieJar
 import com.franmontiel.persistentcookiejar.cache.SetCookieCache
@@ -37,16 +37,16 @@ import java.util.ArrayList
  * Mandatory empty constructor for the fragment manager to instantiate the
  * fragment (e.g. upon screen orientation changes).
  */
-class ItemFragment : Fragment() {
+class QuestionFragment : Fragment() {
     // TODO: Customize parameters
     private var mColumnCount = 1
     private var mListener: OnListFragmentInteractionListener? = null
-    private var data: MutableList<DummyItem> = DummyContent.ITEMS
-    private var mAdapter : MyItemRecyclerViewAdapter? = null
+    private var data: MutableList<QuestionItem> = QuestionContent.ITEMS
+    private var mAdapter : QuestionnaireViewAdapter? = null
     private var view : RecyclerView? = null
 
     var uiHandler = Handler(Handler.Callback { _ ->
-        mAdapter = MyItemRecyclerViewAdapter(data, mListener)
+        mAdapter = QuestionnaireViewAdapter(data, mListener)
         view?.adapter = mAdapter
         false
     })
@@ -60,7 +60,6 @@ class ItemFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
-//        DummyContent.loadTasks()
 
         Log.i("on create view", data.count().toString())
         view = inflater!!.inflate(R.layout.fragment_item_list, container, false) as RecyclerView
@@ -72,7 +71,7 @@ class ItemFragment : Fragment() {
             } else {
                 view?.layoutManager = GridLayoutManager(context, mColumnCount)
             }
-            mAdapter = MyItemRecyclerViewAdapter(data, mListener)
+            mAdapter = QuestionnaireViewAdapter(data, mListener)
             view?.adapter = mAdapter
         }
         return view
@@ -80,16 +79,16 @@ class ItemFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-//        loadTasks()
+//        loadQuestionnaires()
     }
 
-    private fun loadTasks() {
+    private fun loadQuestionnaires() {
         Thread(Runnable {
             try {
                 val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
                 val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                 val request = Request.Builder()
-                        .url("http://www.sudowind.com:8000/user/task/task_list")
+                        .url("http://www.sudowind.com:8000/user/questionnaire_list")
                         .build()
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call?, e: IOException?) {
@@ -104,26 +103,23 @@ class ItemFragment : Fragment() {
                         if (response.code() == 200) {
                             val obj = JSONArray(res)
                             Log.i("load content", obj.length().toString())
-                            data = ArrayList<DummyItem>()
+                            data = ArrayList<QuestionItem>()
                             for (i in 0..(obj.length() - 1))
                             {
                                 val status : Int = obj.getJSONObject(i).get("status") as Int
                                 var statusString : String = ""
                                 when (status) {
-                                    0 -> { statusString = "待接受"}
-                                    1 -> { statusString = "已拒绝"}
-                                    2 -> { statusString = "进行中"}
-                                    3 -> { statusString = "已完成"}
-                                    4 -> { statusString = "未完成"}
+                                    0 -> { statusString = "待完成"}
+                                    1 -> { statusString = "已提交"}
+                                    2 -> { statusString = "已过期"}
                                 }
-                                data.add(DummyItem(
+                                data.add(QuestionItem(
                                         (i + 1).toString(),
-                                        obj.getJSONObject(i).getJSONObject("task").getString("title"),
-                                        obj.getJSONObject(i).getJSONObject("task").getString("content"),
+                                        obj.getJSONObject(i).getJSONObject("qn").getString("name"),
                                         "截止时间：" + Utils().getTimeStr((obj.getJSONObject(i).get("end_timestamp")).toString().toLong()),
-                                        obj.getJSONObject(i).get("ut_id").toString(),
+                                        obj.getJSONObject(i).get("uq_id").toString(),
                                         statusString,
-                                        "task"
+                                        "questionnaire"
                                 ))
                             }
                             uiHandler.sendEmptyMessage(0)
@@ -139,7 +135,7 @@ class ItemFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         Log.i("on resume", "fragment resume")
-        loadTasks()
+        loadQuestionnaires()
     }
 
     override fun onAttach(context: Context?) {
@@ -168,7 +164,7 @@ class ItemFragment : Fragment() {
      */
     interface OnListFragmentInteractionListener {
         // TODO: Update argument type and name
-        fun onListFragmentInteraction(item: DummyItem)
+        fun onListFragmentInteraction(item: QuestionItem)
     }
 
     companion object {
@@ -177,8 +173,8 @@ class ItemFragment : Fragment() {
         private val ARG_COLUMN_COUNT = "column-count"
 
         // TODO: Customize parameter initialization
-        fun newInstance(columnCount: Int): ItemFragment {
-            val fragment = ItemFragment()
+        fun newInstance(columnCount: Int): QuestionFragment {
+            val fragment = QuestionFragment()
             val args = Bundle()
             args.putInt(ARG_COLUMN_COUNT, columnCount)
             fragment.arguments = args

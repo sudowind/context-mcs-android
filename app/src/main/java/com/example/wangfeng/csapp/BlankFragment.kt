@@ -5,13 +5,17 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
 import android.support.v4.app.Fragment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.RadioButton
 import android.widget.TextView
+import android.widget.Toast
 import com.example.wangfeng.csapp.dummy.DummyContent
 import com.franmontiel.persistentcookiejar.ClearableCookieJar
 import com.franmontiel.persistentcookiejar.PersistentCookieJar
@@ -61,12 +65,22 @@ class BlankFragment : Fragment() {
                               savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_blank, container, false)
+        val uiHandler = Handler(Handler.Callback { msg ->
+            val userName = msg.data.getString("name")
+            val userScore = msg.data.getString("score")
+//        Log.i(tag, desc)
+            val userNameView = view.findViewById<TextView>(R.id.userName)
+            val userScoreView = view.findViewById<TextView>(R.id.userScore)
+            userNameView.text = userName
+            userScoreView.text = userScore
+            false
+        })
         Thread(Runnable {
             try {
                 val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
                 val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                 val request = Request.Builder()
-                        .url("http://192.168.255.14:8000/user/info")
+                        .url("http://www.sudowind.com:8000/user/info")
                         .build()
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call?, e: IOException?) {
@@ -81,11 +95,17 @@ class BlankFragment : Fragment() {
 //                            })
                         Log.i("info", res)
                         if (response.code() == 200) {
-                            val userNameView = view.findViewById<TextView>(R.id.userName)
-                            val userScoreView = view.findViewById<TextView>(R.id.userScore)
+//                            val userNameView = view.findViewById<TextView>(R.id.userName)
+//                            val userScoreView = view.findViewById<TextView>(R.id.userScore)
                             val obj = JSONObject(res)
-                            userNameView.text = "用户名：${obj.getString("user_name")}"
-                            userScoreView.text = "用户积分：${obj.getString("score")}"
+//                            userNameView.text = "用户名：${obj.getString("user_name")}"
+//                            userScoreView.text = "用户积分：${obj.getString("score")}"
+                            val msg = Message()
+                            val bundle = Bundle()
+                            bundle.putString("name", obj.getString("user_name"))
+                            bundle.putString("score", obj.getString("score"))
+                            msg.data = bundle
+                            uiHandler.sendMessage(msg)
                         }
                     }
                 })
@@ -100,7 +120,7 @@ class BlankFragment : Fragment() {
                     val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
                     val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                     val request = Request.Builder()
-                            .url("http://192.168.255.14:8000/user/logout")
+                            .url("http://www.sudowind.com:8000/user/logout")
                             .build()
                     client.newCall(request).enqueue(object : Callback {
                         override fun onFailure(call: Call?, e: IOException?) {

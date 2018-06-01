@@ -51,7 +51,7 @@ object DummyContent {
                 val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
                 val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                 val request = Request.Builder()
-                        .url("http://192.168.255.14:8000/user/task/task_list")
+                        .url("http://www.sudowind.com:8000/user/task/task_list")
                         .build()
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call?, e: IOException?) {
@@ -84,7 +84,8 @@ object DummyContent {
                                         obj.getJSONObject(i).getJSONObject("task").getString("content"),
                                         "截止时间：" + Utils().getTimeStr((obj.getJSONObject(i).get("end_time")).toString().toLong()),
                                         obj.getJSONObject(i).get("id").toString(),
-                                        statusString
+                                        statusString,
+                                        "task"
                                 ))
                             }
                         }
@@ -104,7 +105,8 @@ object DummyContent {
     /**
      * A dummy item representing a piece of content.
      */
-    class DummyItem( val id:String,  val title:String,  val details:String, val deadline:String, val taskId:String, val status:String) {
+    class DummyItem( val id:String,  val title:String,  val details:String, val deadline:String,
+                     val taskId:String, val status:String, val type:String) {
 
         override fun toString():String {
             return details
