@@ -16,7 +16,7 @@
     <string name="user_score">积分：200</string>
     <string name="task_photo">拍照</string>
     <string name="choose_photo">选取照片</string>
-    <string name="infoExtra">积分可用户兑换奖励，完成越多的任务，可以获得更多的积分积分可用户兑换奖励，完成越多的任务，可以获得更多的积分积分可用户兑换奖励，完成越多的任务，可以获得更多的积分积分可用户兑换奖励，完成越多的任务，可以获得更多的积分</string>
+    <string name="infoExtra">每名参与到实验活动的用户，完成下列指标。就可以获得一笔固定的现金奖励。\n1）试验期间完成至少15个任务，\n2）每天晚间完成一次简单的心理问卷，\n3）尽量多点开app。</string>
     <string name="register_label_account">用户名</string>
     <string name="register_label_password">密码</string>
     <string name="register_label_confirm_password">确认密码</string>

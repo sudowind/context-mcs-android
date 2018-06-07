@@ -87,6 +87,37 @@ class MainActivity : AppCompatActivity(), SensorEventListener, BlankFragment.OnF
         }
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        init()
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    private fun init() {
+        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+        } else if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 2)
+        } else if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 3)
+        } else {
+            Log.i("main", "created")
+
+            val intentFilter = IntentFilter()
+            intentFilter.addAction(Intent.ACTION_SCREEN_ON)
+            intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
+            intentFilter.addAction(Intent.ACTION_USER_PRESENT)
+            applicationContext.registerReceiver(ScreenBroadcastReceiver(), intentFilter)
+            var bluetoothFilter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+            applicationContext.registerReceiver(BluetoothReceiver(), bluetoothFilter)
+            bluetoothFilter = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+            applicationContext.registerReceiver(BluetoothReceiver(), bluetoothFilter)
+            simpleRate = SimpleRate()
+            sm = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+            accSensor = sm!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            sm!!.registerListener(this@MainActivity, accSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+    }
+
     //检测用户是否对本app开启了“Apps with usage access”权限
     private fun hasPermission() : Boolean {
         val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
@@ -133,16 +164,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener, BlankFragment.OnF
     override fun onCreate(savedInstanceState: Bundle?) {
         checkLoginStatus()
 
-        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
-        }
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 10)
-        }
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 10)
-        }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (!hasPermission()) {
                 startActivityForResult(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
@@ -150,7 +171,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener, BlankFragment.OnF
             }
         }
 
-        Log.i("main", "created")
+        init()
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         content = findViewById<FrameLayout>(R.id.content)
@@ -162,19 +184,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener, BlankFragment.OnF
         addFragment(fragment)
         val intent = Intent(this@MainActivity, DataLogger::class.java)
         startService(intent)
-
-        val intentFilter = IntentFilter()
-        intentFilter.addAction(Intent.ACTION_SCREEN_ON)
-        intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
-        intentFilter.addAction(Intent.ACTION_USER_PRESENT)
-        applicationContext.registerReceiver(ScreenBroadcastReceiver(), intentFilter)
-        var bluetoothFilter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-        applicationContext.registerReceiver(BluetoothReceiver(), bluetoothFilter)
-        bluetoothFilter = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-        applicationContext.registerReceiver(BluetoothReceiver(), bluetoothFilter)
-        simpleRate = SimpleRate()
-        sm = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        accSensor = sm!!.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     }
 
 
@@ -372,7 +381,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener, BlankFragment.OnF
 
     override fun onResume() {
         super.onResume()
-        sm!!.registerListener(this@MainActivity, accSensor, SensorManager.SENSOR_DELAY_NORMAL)
     }
 
     override fun onStop() {

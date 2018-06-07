@@ -90,7 +90,7 @@ class Login : AppCompatActivity(), View.OnClickListener {
                                 .add("password", passWord.text.toString())
                                 .build()
                         val request = Request.Builder()
-                                .url("http://www.sudowind.com:8000/user/login")
+                                .url(Utils().baseUrl + "/user/login")
                                 .post(formBody)
                                 .build()
 

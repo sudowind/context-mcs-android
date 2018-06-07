@@ -24,28 +24,40 @@ class Questionnaire : AppCompatActivity(), View.OnClickListener {
     private var radioGroup : RadioGroup? = null
     private val tag : String = "questionnaire"
     private var uqId : String = ""
-    private var option = -1
+    private var option1 = -1
+    private var option2 = -1
+    private var option3 = -1
+    private var option4 = -1
+    private var option5 = -1
+    private var option6 = -1
+    private val option = arrayOf(-1, -1, -1, -1, -1, -1)
 
     @SuppressLint("SetTextI18n")
     var uiHandler = Handler(Handler.Callback { msg ->
-        val desc = msg.data.getString("desc")
+
 //        Log.i(tag, desc)
-        val descView = findViewById<TextView>(R.id.questionDescription)
-        descView.text = desc
-        for (i in 0..4) {
-            val radioButton = RadioButton(this@Questionnaire)
-            radioButton.text = "${i + 1}"
-            //设置radioButton的点击事件
-            radioButton.setOnClickListener {
-                option = i + 1
-                Toast.makeText(this@Questionnaire, "this is radioButton  ${i + 1}", Toast.LENGTH_SHORT).show()
+        val ids = arrayOf(R.id.q1, R.id.q2, R.id.q3, R.id.q4, R.id.q5, R.id.q6)
+        val rgs = arrayOf(R.id.rg1, R.id.rg2, R.id.rg3, R.id.rg4, R.id.rg5, R.id.rg6)
+        for (idx in 0..5) {
+            val desc = "${idx + 1}. " + msg.data.getString("desc" + idx.toString())
+            val descView = findViewById<TextView>(ids[idx])
+            radioGroup = findViewById(rgs[idx])
+            descView.text = desc
+            for (i in 0..4) {
+                val radioButton = RadioButton(this@Questionnaire)
+                radioButton.text = "${i + 1}"
+                //设置radioButton的点击事件
+                radioButton.setOnClickListener {
+                    option[idx] = i + 1
+//                Toast.makeText(this@Questionnaire, "this is radioButton  ${i + 1}", Toast.LENGTH_SHORT).show()
+                }
+                //将radioButton添加到radioGroup中
+                radioGroup?.addView(radioButton)
             }
-            //将radioButton添加到radioGroup中
-            radioGroup?.addView(radioButton)
-        }
-        radioGroup?.setOnCheckedChangeListener { p0, p1 ->
-            val radioBtn = findViewById<RadioButton>(p1)
-            Toast.makeText(this@Questionnaire, radioBtn.text, Toast.LENGTH_SHORT).show()
+            radioGroup?.setOnCheckedChangeListener { p0, p1 ->
+                val radioBtn = findViewById<RadioButton>(p1)
+//            Toast.makeText(this@Questionnaire, radioBtn.text, Toast.LENGTH_SHORT).show()
+            }
         }
         false
     })
@@ -53,7 +65,6 @@ class Questionnaire : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_questionnaire)
-        radioGroup = findViewById(R.id.radioGroup)
         val bundle = this.intent.extras
         if (bundle != null) {
             val name = bundle.getString("name")
@@ -81,8 +92,14 @@ class Questionnaire : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun submitQuestionnaire() {
-        if (option == -1) {
-            Toast.makeText(this@Questionnaire, "请选择一个选项", Toast.LENGTH_SHORT).show()
+        var flag = true
+        for (i in option) {
+            if (i < 0) {
+                flag = false
+            }
+        }
+        if (!flag) {
+            Toast.makeText(this@Questionnaire, "请完成所有选项", Toast.LENGTH_SHORT).show()
             return
         }
         Thread(Runnable {
@@ -91,10 +108,10 @@ class Questionnaire : AppCompatActivity(), View.OnClickListener {
                 val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                 val formBody = FormBody.Builder()
                         .add("uqId", uqId)
-                        .add("option", option.toString())
+                        .add("option", option.joinToString())
                         .build()
                 val request = Request.Builder()
-                        .url("http://www.sudowind.com:8000/user/questionnaire/finish")
+                        .url(Utils().baseUrl + "/user/questionnaire/finish")
                         .post(formBody)
                         .build()
                 client.newCall(request).enqueue(object : Callback {
@@ -134,12 +151,15 @@ class Questionnaire : AppCompatActivity(), View.OnClickListener {
                         if (response.code() == 200) {
 //                            Log.i(tag, res)
                             val obj = JSONObject(res)
-                            val question = obj.getJSONArray("questions").getJSONObject(0)
-                            Log.i(tag, question.getString("description"))
-//                            uiHandler.sendEmptyMessage(0)
                             val msg = Message()
                             val bundle = Bundle()
-                            bundle.putString("desc", question.getString("description"))
+                            for (i in 0..5) {
+                                val question = obj.getJSONArray("questions").getJSONObject(i)
+                                Log.i(tag, question.getString("description"))
+//                            uiHandler.sendEmptyMessage(0)
+
+                                bundle.putString("desc$i", question.getString("description"))
+                            }
                             msg.data = bundle
                             uiHandler.sendMessage(msg)
                         }

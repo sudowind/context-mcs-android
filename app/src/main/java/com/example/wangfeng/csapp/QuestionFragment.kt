@@ -88,7 +88,7 @@ class QuestionFragment : Fragment() {
                 val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
                 val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                 val request = Request.Builder()
-                        .url("http://www.sudowind.com:8000/user/questionnaire_list")
+                        .url(Utils().baseUrl +  "/user/questionnaire_list")
                         .build()
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call?, e: IOException?) {

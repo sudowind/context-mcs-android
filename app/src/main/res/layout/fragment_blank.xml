@@ -18,7 +18,7 @@
 
             <TextView
                 android:id="@+id/textView6"
-                android:layout_width="wrap_content"
+                android:layout_width="125dp"
                 android:layout_height="40dp"
                 android:layout_margin="16dp"
                 android:layout_weight="1"
@@ -47,7 +47,7 @@
                 android:layout_height="40dp"
                 android:layout_margin="16dp"
                 android:layout_weight="1"
-                android:text="积分："
+                android:text="已完成任务数："
                 android:textAppearance="@style/TextAppearance.AppCompat.Widget.ActionBar.Subtitle" />
 
             <TextView

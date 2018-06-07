@@ -2,9 +2,12 @@ package com.example.wangfeng.csapp
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -31,6 +34,7 @@ import okhttp3.*
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.net.URI
 
 /**
  * Created by wangfeng on 2018/3/20.
@@ -44,13 +48,14 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
     private var photoUri: Uri? = null  // 拍摄照片的路径
 
     private var taskId: String = ""
+    private var tag: String = "task detail"
 
     @Throws(Exception::class)
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.task_detail)
         val btnTakePhoto: Button? = findViewById(R.id.btnTakePhoto)
-        val btnChoosePhoto: Button? = findViewById(R.id.btnChoosePhoto)
+//        val btnChoosePhoto: Button? = findViewById(R.id.btnChoosePhoto)
         val btnSubmit: Button? = findViewById(R.id.btnSubmit)
         val bundle = this.intent.extras
         if (bundle != null) {
@@ -64,12 +69,12 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
             val descView = findViewById<TextView>(R.id.description)
             val deadlineView = findViewById<TextView>(R.id.deadline)
             titleView.text = title
-            descView.text = desc
+            descView.text = deadline
         }
 
         picture = findViewById<View>(R.id.displayPhoto) as ImageView
         btnTakePhoto!!.setOnClickListener(this)
-        btnChoosePhoto!!.setOnClickListener(this)
+//        btnChoosePhoto!!.setOnClickListener(this)
         btnSubmit!!.setOnClickListener(this)
 //        addRatio()
     }
@@ -92,29 +97,70 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
         }
     }
 
+
+
     private fun submitTask() {
         Log.i("submit task", "hahah")
         if (photoUri != null) {
+
             Thread(Runnable {
                 try {
+                    var latitude = 0.0
+                    var longitude = 0.0
+                    if (ContextCompat.checkSelfPermission(this@TaskDetail, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                        var provider : String = ""
+                        val list: List<String> = locationManager.getProviders(true)
+                        when {
+                            list.contains(LocationManager.GPS_PROVIDER) -> provider = LocationManager.GPS_PROVIDER
+                            list.contains(LocationManager.NETWORK_PROVIDER) -> provider = LocationManager.NETWORK_PROVIDER
+                            else -> Log.i(tag, "请打开GPS或网络")
+                        }
+                        if (provider !== "") {
+
+                        }
+                        Log.i(tag, provider)
+                        var location: Location? = null
+                        for (p in list) {
+                            val l = locationManager.getLastKnownLocation(p)
+
+                            if (l == null) {
+                                Log.i(tag, p)
+                                continue
+                            } else {
+                                location = l
+                                break
+                            }
+                        }
+                        latitude = location!!.latitude
+                        longitude = location.longitude
+                        Log.i(tag, "纬度为${location!!.latitude}，经度为${location.longitude}")
+                    }
                     val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
                     val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
-                    val file = File(photoUri.toString())
-//                val builder = MultipartBody.Builder()
-//                        .setType(MultipartBody.FORM)
-//                        .addFormDataPart("image", "response_image.jpg",
-//                                RequestBody.create(MediaType.parse("image/png"), file)).build()
+//                    val file = File(photoUri!!.path)
+                    val requestBody = MultipartBody.Builder()
+                            .setType(MultipartBody.FORM)
+                            .addFormDataPart("image", "response_image.jpg",
+                                    RequestBody.create(MediaType.parse("image/png"), output))
+                            .addFormDataPart("latitude", latitude.toString())
+                            .addFormDataPart("longitude", longitude.toString())
+                            .addFormDataPart("taskId", taskId)
+                            .addFormDataPart("title", "image_title")
+                            .build()
                     val formBody = FormBody.Builder()
                             .add("taskId", taskId)
-                            .add("status", "5")
+                            .add("status", "3")
                             .build()
                     val request = Request.Builder()
-                            .url("http://www.sudowind.com:8000/user/task/modify_status")
-                            .post(formBody)
+                            .url(Utils().baseUrl + "/user/task/finish")
+                            .post(requestBody)
+//                            .post(formBody)
                             .build()
                     client.newCall(request).enqueue(object : Callback {
                         override fun onFailure(call: Call?, e: IOException?) {
                             println("something wrong")
+                            e!!.printStackTrace()
                         }
 
                         override fun onResponse(call: Call?, response: Response?) {
@@ -143,7 +189,7 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
         // 拍摄照片
             R.id.btnTakePhoto -> checkPermissionTakePhoto(v)
         // 相册中选择
-            R.id.btnChoosePhoto -> checkPermissionTakePhoto(v)
+//            R.id.btnChoosePhoto -> checkPermissionTakePhoto(v)
             R.id.btnSubmit -> submitTask()
         }
 
@@ -159,13 +205,13 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
                 } else {
                     takePhoto()
                 }
-            R.id.btnChoosePhoto ->
-                // 检查是否有读取权限,如果需要设置就让他设置;
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_REQUEST_CHOOSE_PICTURE)
-                } else {
-                    choosePhoto()
-                }
+//            R.id.btnChoosePhoto ->
+//                // 检查是否有读取权限,如果需要设置就让他设置;
+//                if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+//                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_REQUEST_CHOOSE_PICTURE)
+//                } else {
+//                    choosePhoto()
+//                }
         }
 
     }
@@ -213,46 +259,45 @@ class TaskDetail : AppCompatActivity(), View.OnClickListener {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (data != null) {
-            when (requestCode) {
-            // 拍摄照片的回调
-                REQUEST_TAKE_PHOTO -> if (resultCode == Activity.RESULT_OK) {
-                    Log.i("img url", photoUri.toString())
-                    try {
-                        val bit = BitmapFactory.decodeStream(contentResolver.openInputStream(photoUri!!))
-                        picture!!.setImageBitmap(bit)
-                    } catch (e: FileNotFoundException) {
-                        e.printStackTrace()
-                        Log.d("tag", e.message)
-                        Toast.makeText(this, "程序崩溃", Toast.LENGTH_SHORT).show()
-                    }
+        Log.i("photo callback", photoUri.toString())
+        when (requestCode) {
+        // 拍摄照片的回调
+            REQUEST_TAKE_PHOTO -> if (resultCode == Activity.RESULT_OK) {
+                Log.i("img url", photoUri.toString())
+                try {
+                    val bit = BitmapFactory.decodeStream(contentResolver.openInputStream(photoUri!!))
+                    picture!!.setImageBitmap(bit)
+                } catch (e: FileNotFoundException) {
+                    e.printStackTrace()
+                    Log.d("tag", e.message)
+                    Toast.makeText(this, "程序崩溃", Toast.LENGTH_SHORT).show()
+                }
 
-                } else {
-                    Log.i("REQUEST_TAKE_PHOTO", "拍摄失败")
-                }
-            // 调用系统相册的回调
-                REQUEST_CHOOSE_PHOTO -> if (resultCode == Activity.RESULT_OK) {
-                    val uri = data.data
-                    photoUri = uri
-                    Log.i("img url", uri.toString())
-                    try {
-                        val bit = BitmapFactory.decodeStream(contentResolver.openInputStream(uri!!))
-                        picture!!.setImageBitmap(bit)
-                    } catch (e: FileNotFoundException) {
-                        e.printStackTrace()
-                        Log.d("tag", e.message)
-                        Toast.makeText(this, "程序崩溃", Toast.LENGTH_SHORT).show()
-                    }
-
-                } else {
-                    Log.i("REQUEST_TAKE_PHOTO", "拍摄失败")
-                }
-                else -> {
-                    Log.i("detail", "未知错误")
-                }
+            } else {
+                Log.i("REQUEST_TAKE_PHOTO", "拍摄失败")
             }
-            val file = File(photoUri.toString())
+        // 调用系统相册的回调
+            REQUEST_CHOOSE_PHOTO -> if (resultCode == Activity.RESULT_OK) {
+                val uri = data!!.data
+                photoUri = uri
+                Log.i("img url", uri.toString())
+                try {
+                    val bit = BitmapFactory.decodeStream(contentResolver.openInputStream(uri!!))
+                    picture!!.setImageBitmap(bit)
+                } catch (e: FileNotFoundException) {
+                    e.printStackTrace()
+                    Log.d("tag", e.message)
+                    Toast.makeText(this, "程序崩溃", Toast.LENGTH_SHORT).show()
+                }
+
+            } else {
+                Log.i("REQUEST_TAKE_PHOTO", "拍摄失败")
+            }
+            else -> {
+                Log.i("detail", "未知错误")
+            }
         }
+        val file = File(photoUri.toString())
     }
 
     // 动态检察权限

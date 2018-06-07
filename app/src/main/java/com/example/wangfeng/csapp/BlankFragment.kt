@@ -80,7 +80,7 @@ class BlankFragment : Fragment() {
                 val cookieJar: ClearableCookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(MainAppliaction.context))
                 val client = OkHttpClient.Builder().cookieJar(cookieJar).build()
                 val request = Request.Builder()
-                        .url("http://www.sudowind.com:8000/user/info")
+                        .url(Utils().baseUrl + "/user/info")
                         .build()
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call?, e: IOException?) {
@@ -103,7 +103,7 @@ class BlankFragment : Fragment() {
                             val msg = Message()
                             val bundle = Bundle()
                             bundle.putString("name", obj.getString("user_name"))
-                            bundle.putString("score", obj.getString("score"))
+                            bundle.putString("score", obj.getString("finish_count"))
                             msg.data = bundle
                             uiHandler.sendMessage(msg)
                         }

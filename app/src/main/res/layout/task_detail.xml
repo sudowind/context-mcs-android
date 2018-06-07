@@ -65,12 +65,6 @@
                         android:layout_weight="1"
                         android:text="@string/task_photo" />
 
-                    <Button
-                        android:id="@+id/btnChoosePhoto"
-                        android:layout_width="174dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/choose_photo" />
                 </LinearLayout>
 
             </LinearLayout>
